@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head}"></head>
+
+<body>
+<div>
+    <button class="btn btn-success">Кнопка</button>
+    <p th:text="${paragraph}" />
+
+    <div class="schoolTables">
+
+        <div th:each="schoolClass : ${classes}" class="card">
+
+            <div th:text="${schoolClass.getName()}"></div>
+            <div th:each="c : ${schoolClass.getClasses()}" style="display: grid; grid-template-columns: 5% 55% 40%">
+                <div th:text="${c.getNumber()}"></div>
+                <div th:text="${c.getName()}"></div>
+                <div th:text="${c.getCab()}"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div th:replace="fragments/footer :: footer">...</div>
+
+</div>
+</body>
+<style>
+    .schoolTables{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 0 0 5% 5% ;
+    }
+    .card{
+        width: 30%;
+        border: 1px solid black;
+        padding: 10px;
+    }
+</style>
+</html>

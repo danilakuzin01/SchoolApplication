@@ -1,15 +1,13 @@
-package com.example.demo.controllers;
+package by.danilakuzin.schoolApplication.controllers;
 
-import com.example.demo.services.DocFileService;
+import by.danilakuzin.schoolApplication.services.DocFileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class HomeController {
-
     private final DocFileService docFileService;
 
     @Autowired
@@ -17,13 +15,13 @@ public class HomeController {
         this.docFileService = docFileService;
     }
 
-    @GetMapping
-    public String home(
-//            @RequestParam(name="name", required = false, defaultValue = "ничего не написано") String name,
-            Model model){
+    @GetMapping("/")
+    public String home(Model model) {
+
         model.addAttribute("paragraph", docFileService.getParagraph());
         model.addAttribute("classes", docFileService.getSchoolClasses());
-//        model.addAttribute("name",name);
+
+        // Возврат имени шаблона (без суффикса .html)
         return "pages/Home";
     }
 }

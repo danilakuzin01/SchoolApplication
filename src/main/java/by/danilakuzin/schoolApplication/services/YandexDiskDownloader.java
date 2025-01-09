@@ -1,12 +1,16 @@
-package com.example.demo.services;
+package by.danilakuzin.schoolApplication.services;
 
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -48,7 +52,7 @@ public class YandexDiskDownloader {
 
             // Сохраняем файл на диск
             InputStream inputStream = new BufferedInputStream(downloadConnection.getInputStream());
-            FileOutputStream fileOutputStream = new FileOutputStream("downloaded_file.doc");
+            FileOutputStream fileOutputStream = new FileOutputStream("src/main/resources/files/downloaded_file.doc");
             byte[] buffer = new byte[1024];
             int bytesRead;
             while ((bytesRead = inputStream.read(buffer)) != -1) {

@@ -1,5 +1,10 @@
 package by.danilakuzin.schoolApplication.models;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,13 +17,19 @@ import java.util.List;
 @Setter
 @ToString
 @Builder
+@Entity
 public class SchoolClass {
-    private Integer id;
-    private String name;
-    private List<Classes> classes = new ArrayList<>();
 
-    public void AddClass(Classes classes1){
-        if (classes == null) classes = new ArrayList<>();
-        classes.add(classes1);
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+
+    @OneToMany(mappedBy = "schoolClass") // указываем, что связь управляется полем 'schoolClass' в сущности Lesson
+    private List<Lesson> lessons = new ArrayList<>();
+
+    public void AddLesson(Lesson lesson){
+        if (lessons == null) lessons = new ArrayList<>();
+        lessons.add(lesson);
     }
 }

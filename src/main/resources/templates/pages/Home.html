@@ -13,7 +13,7 @@
         <div th:each="schoolClass : ${classes}" class="card">
 
             <div th:text="${schoolClass.getName()}"></div>
-            <div th:each="c : ${schoolClass.getClasses()}" style="display: grid; grid-template-columns: 5% 55% 40%">
+            <div th:each="c : ${schoolClass.getLessons()}" style="display: grid; grid-template-columns: 10% 55% 30%">
                 <div th:text="${c.getNumber()}"></div>
                 <div th:text="${c.getName()}"></div>
                 <div th:text="${c.getCab()}"></div>

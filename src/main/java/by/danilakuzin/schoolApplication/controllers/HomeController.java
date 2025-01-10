@@ -1,6 +1,6 @@
 package by.danilakuzin.schoolApplication.controllers;
 
-import by.danilakuzin.schoolApplication.services.DocFileService;
+import by.danilakuzin.schoolApplication.services.fileServices.DocFileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

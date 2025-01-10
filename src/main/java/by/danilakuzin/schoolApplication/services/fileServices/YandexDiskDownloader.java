@@ -1,4 +1,4 @@
-package by.danilakuzin.schoolApplication.services;
+package by.danilakuzin.schoolApplication.services.fileServices;
 
 
 import org.json.JSONArray;
@@ -64,10 +64,5 @@ public class YandexDiskDownloader {
         } else {
             System.out.println("Ошибка: " + responseCode);
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        YandexDiskDownloader downloader = new YandexDiskDownloader();
-        downloader.download();
     }
 }

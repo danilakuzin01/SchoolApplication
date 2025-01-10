@@ -1,6 +1,6 @@
-package by.danilakuzin.schoolApplication.services;
+package by.danilakuzin.schoolApplication.services.fileServices;
 
-import by.danilakuzin.schoolApplication.models.Classes;
+import by.danilakuzin.schoolApplication.models.Lesson;
 import by.danilakuzin.schoolApplication.models.SchoolClass;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 @Service
@@ -43,9 +43,14 @@ public class DocFileService {
     }
 
     // Инициализация через конструктор (чтобы отработал Value у filePath)
-    @PostConstruct
-    public void makeClasses() {
 
+    public void reDownload() throws IOException {
+        YandexDiskDownloader.download();
+        LOGGER.info("Файл создан");
+        makeLessons();
+    }
+
+    public void makeLessons() {
         try {
             filePath = "src/main/resources/files/downloaded_file.doc";
             readWordFile();
@@ -89,7 +94,7 @@ public class DocFileService {
     // Создание списка школьных классов
     public void createSchoolClasses() {
         schoolClasses.clear();
-        AtomicInteger id = new AtomicInteger(0);
+        AtomicLong id = new AtomicLong(0);
 
         table.getRows().forEach(row -> {
             row.getTableCells().stream()
@@ -115,7 +120,7 @@ public class DocFileService {
 
     // Создание уроков и привязка к классам
     public void createClasses() {
-        int id = 0;
+        long id = 0L;
         int classNumber = 1;  // Порядковый номер для уроков
         boolean isCreated = false;
 
@@ -138,15 +143,14 @@ public class DocFileService {
 
                 SchoolClass schoolClass = checkClassAbove(rowIndex, cellId);
 
-
-                Classes classes = Classes.builder()
+                Lesson lesson = Lesson.builder()
                         .id(id++)
                         .number(String.valueOf(classNumber))
                         .name(cellName.getText())
                         .cab(cellCab.getText())
                         .build();
                 LOGGER.info(schoolClass.getName());
-                schoolClass.AddClass(classes);
+                schoolClass.AddLesson(lesson);
                 isCreated = true;
 
             }
@@ -176,12 +180,9 @@ public class DocFileService {
                             .filter(p -> p.getName().equals(columnName))
                             .findFirst()
                             .orElse(null); // Получаем объект класса, если найден
-
                     break; // Прерываем внутренний цикл
                 }
-
             if (foundClass != null) break; // Прерываем внешний цикл, если класс найден
-
         }
 
         // Возвращаем найденный класс или null, если класс не найден

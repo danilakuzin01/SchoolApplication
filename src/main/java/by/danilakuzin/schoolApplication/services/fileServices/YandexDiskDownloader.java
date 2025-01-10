@@ -19,7 +19,8 @@ public class YandexDiskDownloader {
     private static final String OAUTH_TOKEN = "y0_AgAAAAArShsWAAzjjQAAAAEa8SICAADxY0NfVK1ILaoGkCYjz7NQV92P-w";
     private static final String PUBLIC_FOLDER = "nrUVdWaKSOLnVA";
 
-    public static void download() throws IOException {
+
+    public static void download(String filePath) throws IOException {
         String requestString = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=https://yadi.sk/d/"+ PUBLIC_FOLDER + "&sort";
         URL url = new URL(requestString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -52,7 +53,7 @@ public class YandexDiskDownloader {
 
             // Сохраняем файл на диск
             InputStream inputStream = new BufferedInputStream(downloadConnection.getInputStream());
-            FileOutputStream fileOutputStream = new FileOutputStream("src/main/resources/files/downloaded_file.doc");
+            FileOutputStream fileOutputStream = new FileOutputStream(filePath);
             byte[] buffer = new byte[1024];
             int bytesRead;
             while ((bytesRead = inputStream.read(buffer)) != -1) {

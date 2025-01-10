@@ -2,7 +2,7 @@ package by.danilakuzin.schoolApplication.services.fileServices;
 
 import by.danilakuzin.schoolApplication.models.Lesson;
 import by.danilakuzin.schoolApplication.models.SchoolClass;
-import jakarta.annotation.PostConstruct;
+import by.danilakuzin.schoolApplication.models.SchoolClassDate;
 import lombok.Getter;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -10,21 +10,30 @@ import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 @Service
 public class DocFileService {
     private static final Logger LOGGER = Logger.getLogger(DocFileService.class.getName());
-//    @Value("${file.name}")
-//    @Value("src/main/resources/files/downloaded_file.doc")
-    private String filePath;
+
+    private String filePath = "src/main/resources/files/downloaded_file.docx";
 
     private XWPFDocument document;
     private XWPFTable table;
@@ -32,9 +41,9 @@ public class DocFileService {
     private String paragraph;
 
     @Getter
-    private final List<SchoolClass> schoolClasses = new ArrayList<>();
+    private List<SchoolClass> schoolClasses = new ArrayList<>();
 
-    private final HashMap<Integer, List<String>> tableRowContent = new HashMap<>();
+    private HashMap<Integer, List<String>> tableRowContent = new HashMap<>();
     private final List<String> classNumbers = Arrays.asList("5", "6", "7", "8", "9", "10", "11");
 
     // Конструктор на случай если понадобятся другие поля
@@ -42,20 +51,28 @@ public class DocFileService {
 
     }
 
-    // Инициализация через конструктор (чтобы отработал Value у filePath)
 
+    // Инициализация через конструктор (чтобы отработал Value у filePath)
     public void reDownload() throws IOException {
-        YandexDiskDownloader.download();
+        YandexDiskDownloader.download(filePath);
         LOGGER.info("Файл создан");
+
+        makeLessons();
+        moveFile();
+    }
+
+    // Обновление информации для выбранного файла
+    public void updateInfoFile(String path) throws IOException {
+        filePath = path;
         makeLessons();
     }
 
     public void makeLessons() {
         try {
-            filePath = "src/main/resources/files/downloaded_file.doc";
             readWordFile();
-            createSchoolClasses();
-            createClasses();
+//            createSchoolClasses();
+//            createClasses();
+//            LOGGER.info(schoolClasses.toString());
         } catch (Exception e) {
             LOGGER.info("Ошибка: " + e);
         }
@@ -149,7 +166,7 @@ public class DocFileService {
                         .name(cellName.getText())
                         .cab(cellCab.getText())
                         .build();
-                LOGGER.info(schoolClass.getName());
+//                LOGGER.info(schoolClass.getName());
                 schoolClass.AddLesson(lesson);
                 isCreated = true;
 
@@ -158,7 +175,7 @@ public class DocFileService {
         }
 //        LOGGER.info(schoolClasses.stream().filter(p -> p.getName().contains("9В")).findFirst().toString());
     }
-
+    // Проверка класса, который находится над уроком
     private SchoolClass checkClassAbove(int rowIndex, int cellId){
         // Список номеров классов
 
@@ -187,5 +204,40 @@ public class DocFileService {
 
         // Возвращаем найденный класс или null, если класс не найден
         return foundClass;
+    }
+
+    private void moveFile() throws IOException {
+        LOGGER.info(paragraph);
+        // Регулярное выражение для поиска даты в формате дд.мм.гггг или дд,мм,гггг
+        Pattern pattern = Pattern.compile("(\\d{2})[.,](\\d{2})[.,](\\d{4})");
+        Matcher matcher = pattern.matcher(paragraph);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        LocalDate date = LocalDate.of(2000, 01, 01);
+
+        while (matcher.find()) {
+            // Приводим к формату с точками для парсинга
+            String dateString = matcher.group().replace(',', '.');
+            date = LocalDate.parse(dateString, formatter);
+            LOGGER.info("Найдена дата: " + date);
+        }
+
+        // Создание папки для файла
+        Path dirPath = Paths.get("src/main/resources/files/"+ date.toString());
+        if (!Files.exists(dirPath)) {
+            Files.createDirectory(dirPath);
+        }
+
+        // Перенос файла в новую папку
+        Path oldFilePath = Paths.get(filePath);
+        Path newFilePath = Paths.get("src/main/resources/files/"+ date.toString()+"/document.docx");
+        if (!Files.exists(newFilePath)) {
+            Files.copy(oldFilePath, newFilePath, REPLACE_EXISTING);
+        }
+
+        SchoolClassDate schoolClassDate = SchoolClassDate.builder()
+                .date(date)
+                .name(paragraph)
+                .build();
     }
 }

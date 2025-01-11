@@ -3,6 +3,8 @@ package by.danilakuzin.schoolApplication.services.fileServices;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedInputStream;
@@ -13,20 +15,31 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.logging.Logger;
 
 @Service
+@PropertySource("classpath:application.properties")
 public class YandexDiskDownloader {
-    private static final String OAUTH_TOKEN = "y0_AgAAAAArShsWAAzjjQAAAAEa8SICAADxY0NfVK1ILaoGkCYjz7NQV92P-w";
-    private static final String PUBLIC_FOLDER = "nrUVdWaKSOLnVA";
+    private final Logger LOGGER = Logger.getLogger(YandexDiskDownloader.class.getName());
+
+    private final String oauthToken;
+    private final String publicFolder;
 
 
-    public static void download(String filePath) throws IOException {
-        String requestString = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=https://yadi.sk/d/"+ PUBLIC_FOLDER + "&sort";
+    public YandexDiskDownloader(
+            @Value("${yandex.oauth.token}") String oauthToken,
+            @Value("${yandex.public.folder}") String publicFolder) {
+        this.oauthToken = oauthToken;
+        this.publicFolder = publicFolder;
+    }
+
+    public void download(String filePath) throws IOException {
+        String requestString = "https://cloud-api.yandex.net/v1/disk/public/resources?public_key=https://yadi.sk/d/"+ publicFolder + "&sort";
         URL url = new URL(requestString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         // Настраиваем запрос
         connection.setRequestMethod("GET");
-        connection.setRequestProperty("Authorization", "OAuth " + OAUTH_TOKEN);
+        connection.setRequestProperty("Authorization", "OAuth " + oauthToken);
 
         // Проверяем код ответа
         int responseCode = connection.getResponseCode();
@@ -61,6 +74,8 @@ public class YandexDiskDownloader {
             }
             fileOutputStream.close();
             inputStream.close();
+
+            LOGGER.info("Файл создан");
 
         } else {
             System.out.println("Ошибка: " + responseCode);

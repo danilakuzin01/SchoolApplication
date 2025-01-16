@@ -2,7 +2,8 @@ package by.danilakuzin.schoolApplication.services.fileServices;
 
 import by.danilakuzin.schoolApplication.models.Lesson;
 import by.danilakuzin.schoolApplication.models.SchoolClass;
-import by.danilakuzin.schoolApplication.models.SchoolClassDate;
+import by.danilakuzin.schoolApplication.models.SchoolDate;
+import by.danilakuzin.schoolApplication.services.impl.SchoolDateServiceImpl;
 import lombok.Getter;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -10,7 +11,6 @@ import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,11 +32,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 @Service
 public class DocFileService {
     private static final Logger LOGGER = Logger.getLogger(DocFileService.class.getName());
-
-    private final YandexDiskDownloader yandexDiskDownloader;  // Внедрение зависимости
+    private final YandexDiskDownloader yandexDiskDownloader;
+    private final SchoolDateServiceImpl schoolClassDateService;
 
     private String filePath = "src/main/resources/files/downloaded_file.docx";
-    LocalDate date = LocalDate.of(2000, 01, 01);
 
     private XWPFDocument document;
     private XWPFTable table;
@@ -50,42 +49,38 @@ public class DocFileService {
     private final List<String> classNumbers = Arrays.asList("5", "6", "7", "8", "9", "10", "11");
 
     // Конструктор на случай если понадобятся другие поля
-    // ✅ Внедрение YandexDiskDownloader через конструктор
-    public DocFileService(YandexDiskDownloader yandexDiskDownloader) {
+    public DocFileService(YandexDiskDownloader yandexDiskDownloader, SchoolDateServiceImpl schoolClassDateService) {
         this.yandexDiskDownloader = yandexDiskDownloader;
+        this.schoolClassDateService = schoolClassDateService;
     }
 
 
     // Инициализация через конструктор (чтобы отработал Value у filePath)
     public void reDownload() throws IOException {
-        filePath = "src/main/resources/files/downloaded_file.docx";
-
         yandexDiskDownloader.download(filePath);
+        LOGGER.info("Файл создан");
 
-        getData();
+        makeLessons();
         moveFile();
     }
 
     // Обновление информации для выбранного файла
     public void updateInfoFile(String path) throws IOException {
         filePath = path;
-        getData();
+        makeLessons();
     }
 
-    public void getData(){
-        readWordFile();
-        getDate();
-
-        SchoolClassDate schoolClassDate = SchoolClassDate.builder()
-                .date(date)
-                .name(paragraph)
-                .build();
-
-        createSchoolClasses();
-        createClasses();
+    public void makeLessons() {
+        try {
+            readWordFile();
+            createSchoolClasses();
+            createClasses();
+//            LOGGER.info(schoolClasses.toString());
+        } catch (Exception e) {
+            LOGGER.info("Ошибка: " + e);
+        }
     }
 
-    // Чтение файла
     public void readWordFile() {
         StringBuilder text = new StringBuilder();
 
@@ -102,24 +97,6 @@ public class DocFileService {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    // Получение даты из файла
-    private void getDate(){
-        LOGGER.info(paragraph);
-        // Регулярное выражение для поиска даты в формате дд.мм.гггг или дд,мм,гггг
-        Pattern pattern = Pattern.compile("(\\d{2})[.,](\\d{2})[.,](\\d{4})");
-        Matcher matcher = pattern.matcher(paragraph);
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-
-        while (matcher.find()) {
-            // Приводим к формату с точками для парсинга
-            String dateString = matcher.group().replace(',', '.');
-            date = LocalDate.parse(dateString, formatter);
-            LOGGER.info("Найдена дата: " + date);
-        }
-
     }
 
     // Заполнение таблицы построчно
@@ -201,7 +178,6 @@ public class DocFileService {
         }
 //        LOGGER.info(schoolClasses.stream().filter(p -> p.getName().contains("9В")).findFirst().toString());
     }
-
     // Проверка класса, который находится над уроком
     private SchoolClass checkClassAbove(int rowIndex, int cellId){
         // Список номеров классов
@@ -233,8 +209,22 @@ public class DocFileService {
         return foundClass;
     }
 
-    // Перемещение файла в папку с его датой
     private void moveFile() throws IOException {
+        LOGGER.info(paragraph);
+        // Регулярное выражение для поиска даты в формате дд.мм.гггг или дд,мм,гггг
+        Pattern pattern = Pattern.compile("(\\d{2})[.,](\\d{2})[.,](\\d{4})");
+        Matcher matcher = pattern.matcher(paragraph);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        LocalDate date = LocalDate.of(2000, 01, 01);
+
+        while (matcher.find()) {
+            // Приводим к формату с точками для парсинга
+            String dateString = matcher.group().replace(',', '.');
+            date = LocalDate.parse(dateString, formatter);
+            LOGGER.info("Найдена дата: " + date);
+        }
+
         // Создание папки для файла
         Path dirPath = Paths.get("src/main/resources/files/"+ date.toString());
         if (!Files.exists(dirPath)) {
@@ -247,5 +237,10 @@ public class DocFileService {
         if (!Files.exists(newFilePath)) {
             Files.copy(oldFilePath, newFilePath, REPLACE_EXISTING);
         }
+
+        SchoolDate schoolClassDate = SchoolDate.builder()
+                .date(date)
+                .name(paragraph)
+                .build();
     }
 }

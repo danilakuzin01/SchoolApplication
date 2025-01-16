@@ -23,7 +23,7 @@ import java.util.List;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-public class SchoolClassDate {
+public class SchoolDate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

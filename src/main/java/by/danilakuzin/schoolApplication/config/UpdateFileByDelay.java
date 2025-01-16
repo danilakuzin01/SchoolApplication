@@ -20,7 +20,7 @@ public class UpdateFileByDelay {
     }
 
 
-    @Scheduled(fixedDelay = 43_000_000L)
+//    @Scheduled(fixedDelay = 43_000_000L)
     private void downloadAndUpdate() throws InterruptedException, IOException {
         // После завершения загрузки, выполняем следующий шаг
         docFileService.reDownload();

@@ -37,7 +37,7 @@ public class SchoolClass {
 
     @ManyToOne // каждый урок относится к одному классу
     @JoinColumn(name = "school_class_date_id") // указываем имя столбца в таблице, которое будет хранить id SchoolClass
-    private SchoolClassDate date;
+    private SchoolDate date;
 
     public void AddLesson(Lesson lesson){
         if (lessons == null) lessons = new ArrayList<>();

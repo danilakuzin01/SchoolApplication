@@ -23,8 +23,8 @@ public class HomeController {
 //        LOGGER.info(docFileService.getParagraph());
 //        LOGGER.info(docFileService.getSchoolClasses().toString());
 
-//        model.addAttribute("paragraph", docFileService.getParagraph());
-//        model.addAttribute("classes", docFileService.getSchoolClasses());
+        model.addAttribute("paragraph", docFileService.getParagraph());
+        model.addAttribute("classes", docFileService.getSchoolClasses());
 
         // Возврат имени шаблона (без суффикса .html)
         return "pages/Home";

@@ -3,12 +3,16 @@ package by.danilakuzin.schoolApplication.services.fileServices;
 import by.danilakuzin.schoolApplication.models.Lesson;
 import by.danilakuzin.schoolApplication.models.SchoolClass;
 import by.danilakuzin.schoolApplication.models.SchoolDate;
+import by.danilakuzin.schoolApplication.services.impl.LessonServiceImpl;
+import by.danilakuzin.schoolApplication.services.impl.SchoolClassServiceImpl;
 import by.danilakuzin.schoolApplication.services.impl.SchoolDateServiceImpl;
 import lombok.Getter;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
@@ -17,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,37 +34,39 @@ import java.util.regex.Pattern;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-@Service
+@Component
 public class DocFileService {
     private static final Logger LOGGER = Logger.getLogger(DocFileService.class.getName());
-    private final YandexDiskDownloader yandexDiskDownloader;
-    private final SchoolDateServiceImpl schoolClassDateService;
 
+    // Сервисы
+    @Autowired
+    private YandexDiskDownloader yandexDiskDownloader;
+    @Autowired
+    private SchoolDateServiceImpl schoolDateService;
+    @Autowired
+    private SchoolClassServiceImpl schoolClassService;
+    @Autowired
+    private LessonServiceImpl lessonService;
+
+    // Путь до файла
     private String filePath = "src/main/resources/files/downloaded_file.docx";
 
+    // Документ word, таблица, параграф и список классов
     private XWPFDocument document;
     private XWPFTable table;
     @Getter
     private String paragraph;
-
     @Getter
-    private List<SchoolClass> schoolClasses = new ArrayList<>();
+    private final List<SchoolClass> schoolClasses = new ArrayList<>();
 
-    private HashMap<Integer, List<String>> tableRowContent = new HashMap<>();
+    private final HashMap<Integer, List<String>> tableRowContent = new HashMap<>();
     private final List<String> classNumbers = Arrays.asList("5", "6", "7", "8", "9", "10", "11");
-
-    // Конструктор на случай если понадобятся другие поля
-    public DocFileService(YandexDiskDownloader yandexDiskDownloader, SchoolDateServiceImpl schoolClassDateService) {
-        this.yandexDiskDownloader = yandexDiskDownloader;
-        this.schoolClassDateService = schoolClassDateService;
-    }
-
+    LocalDate date = LocalDate.of(2000, 01, 01);
+    boolean isExist = false;
 
     // Инициализация через конструктор (чтобы отработал Value у filePath)
     public void reDownload() throws IOException {
         yandexDiskDownloader.download(filePath);
-        LOGGER.info("Файл создан");
-
         makeLessons();
         moveFile();
     }
@@ -73,9 +80,11 @@ public class DocFileService {
     public void makeLessons() {
         try {
             readWordFile();
+            getDate();
+
             createSchoolClasses();
             createClasses();
-//            LOGGER.info(schoolClasses.toString());
+            isExist = false;
         } catch (Exception e) {
             LOGGER.info("Ошибка: " + e);
         }
@@ -83,31 +92,17 @@ public class DocFileService {
 
     public void readWordFile() {
         StringBuilder text = new StringBuilder();
-
         try (FileInputStream fis = new FileInputStream(filePath)) {
             // Открытие документа Word
             document = new XWPFDocument(fis);
-
             // Получение всех параграфов и таблиц документа
             paragraph = document.getParagraphs().getFirst().getText();
             table = document.getTables().getFirst();
 
             // Проход по всем параграфам и добавление текста в StringBuilder
-            setTableRowContent();
+//            setTableRowContent();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    // Заполнение таблицы построчно
-    public void setTableRowContent() {
-        for (int rowIndex = 0; rowIndex < table.getRows().size(); rowIndex++) {
-            List<String> rowContentList = new ArrayList<>();
-            for (int cellId = 0; cellId < table.getRow(rowIndex).getTableCells().size(); cellId++) {
-                XWPFTableCell cell = table.getRow(rowIndex).getCell(cellId);
-                rowContentList.add(cell.getText());
-            }
-            tableRowContent.put(rowIndex, rowContentList);
         }
     }
 
@@ -115,6 +110,10 @@ public class DocFileService {
     public void createSchoolClasses() {
         schoolClasses.clear();
         AtomicLong id = new AtomicLong(0);
+
+        SchoolDate schoolDate = schoolDateService.getSchoolClassesToday().getFirst();
+
+        if (schoolDate != null && schoolDate.getSchoolClasses().size() < 0)
 
         table.getRows().forEach(row -> {
             row.getTableCells().stream()
@@ -130,12 +129,13 @@ public class DocFileService {
                             SchoolClass schoolClass = SchoolClass.builder()
                                     .id(id.getAndIncrement())
                                     .name(cell.getText())
+                                    .date(schoolDate)
                                     .build();
+                            schoolClassService.save(schoolClass);
                             schoolClasses.add(schoolClass);
                         });
                 });
         });
-//        LOGGER.info(schoolClasses.toString());
     }
 
     // Создание уроков и привязка к классам
@@ -164,24 +164,21 @@ public class DocFileService {
                 SchoolClass schoolClass = checkClassAbove(rowIndex, cellId);
 
                 Lesson lesson = Lesson.builder()
-                        .id(id++)
+                        .schoolClass(schoolClass)
                         .number(String.valueOf(classNumber))
                         .name(cellName.getText())
                         .cab(cellCab.getText())
                         .build();
-//                LOGGER.info(schoolClass.getName());
+
                 schoolClass.AddLesson(lesson);
                 isCreated = true;
 
             }
             if (isCreated) classNumber++;
         }
-//        LOGGER.info(schoolClasses.stream().filter(p -> p.getName().contains("9В")).findFirst().toString());
     }
     // Проверка класса, который находится над уроком
     private SchoolClass checkClassAbove(int rowIndex, int cellId){
-        // Список номеров классов
-
         // Проверка ячеек выше текущей строки на наличие значений из classNumbers
         SchoolClass foundClass = null;
 
@@ -209,38 +206,60 @@ public class DocFileService {
         return foundClass;
     }
 
-    private void moveFile() throws IOException {
-        LOGGER.info(paragraph);
+    // Получение даты из файла
+    private void getDate(){
         // Регулярное выражение для поиска даты в формате дд.мм.гггг или дд,мм,гггг
         Pattern pattern = Pattern.compile("(\\d{2})[.,](\\d{2})[.,](\\d{4})");
         Matcher matcher = pattern.matcher(paragraph);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-        LocalDate date = LocalDate.of(2000, 01, 01);
+        LocalDateTime dateTime = LocalDateTime.now();
 
         while (matcher.find()) {
             // Приводим к формату с точками для парсинга
             String dateString = matcher.group().replace(',', '.');
-            date = LocalDate.parse(dateString, formatter);
-            LOGGER.info("Найдена дата: " + date);
+            dateTime = LocalDateTime.parse(dateString + "T00:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         }
+        LOGGER.info("Найдена дата: " + dateTime);
+        date = dateTime.toLocalDate();
 
+        // Если такой даты в БД нет, то создание такой записи
+        if (schoolDateService.getSchoolClassesByDate(date).size() < 1){
+            isExist = false;
+            LOGGER.info("В БД нет записей на этот день");
+            createSchoolDate(dateTime);
+        } else {
+            isExist = true;
+            LOGGER.info("В БД уже есть такая запись");
+        }
+    }
+
+    private void createSchoolDate(LocalDateTime dateTime){
+        SchoolDate schoolDate = SchoolDate.builder()
+                .date(dateTime.toLocalDate())
+                .dateTime(dateTime)
+                .filePath("src/main/resources/files/"+ dateTime.toLocalDate())
+                .name(paragraph)
+                .build();
+        LOGGER.info(schoolDate.toString());
+        schoolDateService.save(schoolDate);
+    }
+
+    private void moveFile() throws IOException {
         // Создание папки для файла
         Path dirPath = Paths.get("src/main/resources/files/"+ date.toString());
-        if (!Files.exists(dirPath)) {
-            Files.createDirectory(dirPath);
-        }
+//        if (!Files.exists(dirPath)) {
+//            Files.createDirectory(dirPath);
+//        }
 
         // Перенос файла в новую папку
         Path oldFilePath = Paths.get(filePath);
-        Path newFilePath = Paths.get("src/main/resources/files/"+ date.toString()+"/document.docx");
+//        Path newFilePath = Paths.get("src/main/resources/files/"+ date.toString()+"/document.docx");
+        Path newFilePath = Paths.get("src/main/resources/files/"+ date + ".docx");
         if (!Files.exists(newFilePath)) {
             Files.copy(oldFilePath, newFilePath, REPLACE_EXISTING);
         }
 
-        SchoolDate schoolClassDate = SchoolDate.builder()
-                .date(date)
-                .name(paragraph)
-                .build();
+
     }
 }

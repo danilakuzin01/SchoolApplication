@@ -2,6 +2,7 @@ package by.danilakuzin.schoolApplication.models;
 
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -14,6 +15,8 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -30,9 +33,10 @@ public class SchoolDate {
     public Long Id;
 
     public String name;
+    public LocalDateTime dateTime;
     public LocalDate date;
     public String filePath;
 
-    @OneToMany(mappedBy = "date")
-    public List<SchoolClass> schoolClasses;
+    @OneToMany(mappedBy = "date", fetch = FetchType.EAGER)
+    public List<SchoolClass> schoolClasses = new ArrayList<>();
 }

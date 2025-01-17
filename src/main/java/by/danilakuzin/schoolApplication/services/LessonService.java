@@ -6,7 +6,7 @@ import by.danilakuzin.schoolApplication.models.SchoolClass;
 
 import java.util.List;
 
-public interface LessonsService {
+public interface LessonService {
     List<Lesson> getAllLessons();
     List<Lesson> getLessonsBySchoolClass(SchoolClass schoolClass);
     Lesson getById(long id);

@@ -34,7 +34,6 @@ public class SchoolClass {
     @OneToMany(mappedBy = "schoolClass") // указываем, что связь управляется полем 'schoolClass' в сущности Lesson
     private List<Lesson> lessons = new ArrayList<>();
 
-
     @ManyToOne // каждый урок относится к одному классу
     @JoinColumn(name = "school_class_date_id") // указываем имя столбца в таблице, которое будет хранить id SchoolClass
     private SchoolDate date;

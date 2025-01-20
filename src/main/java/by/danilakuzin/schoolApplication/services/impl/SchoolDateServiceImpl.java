@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -25,17 +24,17 @@ public class SchoolDateServiceImpl implements SchoolDateService {
     }
 
     @Override
-    public List<SchoolDate> getSchoolClassesToday() {
+    public SchoolDate getSchoolDateToday() {
         return schoolDateRepository.findByDate(LocalDate.now());
     }
 
     @Override
-    public List<SchoolDate> getSchoolClassesTomorrow() {
+    public List<SchoolDate> getSchoolDateTomorrow() {
         return List.of();
     }
 
     @Override
-    public List<SchoolDate> getSchoolClassesByDate(LocalDate localDate) {
+    public SchoolDate getSchoolDateByDate(LocalDate localDate) {
         return schoolDateRepository.findByDate(localDate);
     }
 

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SchoolClassServiceImpl implements SchoolClassService {
@@ -28,6 +29,11 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     @Override
     public SchoolClass getById(long id) {
         return schoolClassRepository.findById(id).orElseThrow();
+    }
+
+    @Override
+    public Optional<SchoolClass> getByName(String name) {
+        return schoolClassRepository.findByName(name);
     }
 
     @Override

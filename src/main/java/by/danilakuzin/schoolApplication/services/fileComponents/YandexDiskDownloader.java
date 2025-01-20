@@ -1,4 +1,4 @@
-package by.danilakuzin.schoolApplication.services.fileServices;
+package by.danilakuzin.schoolApplication.services.fileComponents;
 
 
 import org.json.JSONArray;

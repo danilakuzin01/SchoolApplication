@@ -12,6 +12,6 @@ import java.util.Optional;
 
 @Repository
 public interface SchoolDateRepository extends JpaRepository<SchoolDate, Long> {
-    List<SchoolDate> findByDate(LocalDate date);
+    SchoolDate findByDate(LocalDate date);
     List<SchoolDate> findByDateTime(LocalDateTime date);
 }
